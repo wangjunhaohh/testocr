@@ -1,0 +1,22 @@
+paths:
+  models: "./models"
+  data: "./data/gameData.json"
+  players: "./data/testPlayers.json"
+  friend_players: "./data/friendPlayers.json"
+  err_corrections: "./data/err_corrections.json"
+  character_type: "./data/characterType.json"
+  debug: "./debug"
+  output: "./output"
+  pictures: "./pics"
+  logs: "./logs"
+
+database:
+  dbpath: "./data/database.db"
+  table: "testtable"
+
+configuration:
+  min_confidence: 0.2
+  thread_count: 1
+  use_gpu: true
+  debug: false
+  image_size: [2622, 1206]
