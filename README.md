@@ -13,3 +13,7 @@
 ## 未完成的功能
 1. 多线程orc识别（ps.目前主线程识别70份战报140个图片的速度大概是20几秒似乎不需要这个功能）
 4. 模拟器自动截图功能
+
+## tesseract_cmd需配置成自己安装的orc地址
+1. tesseract_cmd = 'D:\\java\\py3\\tesseractOcr\\tesseract.exe'
+2. 下载地址：https://digi.bib.uni-mannheim.de/tesseract/
