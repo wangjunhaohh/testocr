@@ -1,15 +1,45 @@
 import os
+import datetime
 import time
+
 import cv2
 from PIL import Image
 import pytesseract
 import numpy as np
 import subprocess
 from libs import orc_chinese
-def adb_screencap(filename="screen.png"):
-    # os.system(f"adb devices")
-    os.system(f"adb exec-out screencap -p > ../pics/adb/{filename}")
+def adb_check():
+    os.system(f"adb devices")
+def adb_screencap(filename="screen.png",type="time"):
+    """
+       :param filename: 文件名
+       :param type: 截图类型
+       :return: 截图名称
+    """
+    if(type == "time"):
+        os.system(f"adb exec-out screencap -p > ../pics/adb/time/{filename}")
+    elif(type == "detail"):
+        print()
+        os.system(f"adb exec-out screencap -p > ../pics/adb/battle/{filename}")
     return filename
+def scroll_one_item(screen_w, screen_h, item_ratio=0.19, x_ratio=0.5, duration=300):
+    """
+    按百分比滑动一条战报高度
+    :param screen_w: 屏幕宽度
+    :param screen_h: 屏幕高度
+    :param item_ratio: 一条战报占屏幕高度的比例（默认0.35）
+    :param x_ratio: 横向滑动位置（默认屏幕中间）
+    :param duration: 滑动时长(ms)
+    """
+    x = int(screen_w * x_ratio)
+
+    # 起点放在屏幕的 70%，终点往上滑 item_ratio
+    y1 = int(screen_h * item_ratio)
+    y2 = int(y1 - screen_h * item_ratio)
+
+    cmd = f"adb shell input swipe {x} {y1} {x} {y2} {duration}"
+    print("执行命令:", cmd)
+    os.system(cmd)
 
 def adb_tap(percent_x, percent_y):
     output = subprocess.check_output("adb shell wm size", shell=True).decode()
@@ -38,8 +68,8 @@ def extract_timestamp(screenshot_path):
     w, h = img.size  # 动态获取分辨率
 
     # 这里用百分比定义裁剪区域 [x1%, y1%, x2%, y2%]
-    x1, y1 = int(w * 0.419), int(h * 0.476)
-    x2, y2 = int(w * 0.545), int(h * 0.509)
+    x1, y1 = int(w * 0.433), int(h * 0.476)
+    x2, y2 = int(w * 0.5365), int(h * 0.509)
 
     crop_img = img.crop((x1, y1, x2, y2))
     crop_img.save("screen1.png")
@@ -64,8 +94,8 @@ def extract_timestamp(screenshot_path):
 
     # OCR 识别
     processed = Image.fromarray(binary)
-    text = pytesseract.image_to_string(processed, config=r'--psm 7')
-
+    #去掉换行
+    text = pytesseract.image_to_string(processed, config=r'--psm 7').replace('\n', '')
     return text
 
 # 用于放大图片，太小不好识别
@@ -73,16 +103,26 @@ def upscale(img, scale=2):
     w, h = img.size
     return img.resize((w * scale, h * scale), Image.Resampling.LANCZOS)
 
-def main():
-    last_timestamp = None
-    # adb_tap(0.0885, 0.7426)  # 战报按钮坐标 (需修改)
-    # 1. 点开战报窗口
-    img_file = adb_screencap("list.png")
-    img_file_pre_path = "../pics/adb/"
-    ts = extract_timestamp(img_file_pre_path + img_file)
 
-    print(ts)
-    # adb_tap(0.95104, 0.0463)  # 战报按钮坐标 (需修改)
+def main(nowDay):
+    last_timestamp = None
+    # 1. 点开战报窗口
+    adb_tap(0.0721, 0.7463)  # 战报按钮坐标 (需修改)
+    time.sleep(0.5)
+    img_file = adb_screencap("list.png","time")
+    img_file_pre_path = "../pics/adb/time/"
+    identifyTimestamp = extract_timestamp(img_file_pre_path + img_file)
+    # 反着比较，不想做字符串替换了 传进来的日期为2025/09/15 ，识别的时间戳为2025/09/15 00:34:45
+    if nowDay in identifyTimestamp:
+        adb_tap(0.4828, 0.3897)
+        save_name = f"{identifyTimestamp.replace(':', '').replace('/', '').replace(' ', '')}.png"
+        # 太快会导致截图到上一次的界面 测试0.2不行,0.3大部分可以，为确保延迟0.5
+        time.sleep(0.5)
+        adb_screencap(save_name,"detail")
+        print(identifyTimestamp)
+    else:
+        print("不是当天")
+    adb_tap(0.9660, 0.04975)  # 战报按钮坐标 (需修改)
     # while True:
         # Step1: 打开战报窗口
         # adb_tap(0.109, 0.917)   # 战报按钮坐标 (需修改)
@@ -127,5 +167,18 @@ def main():
         #     time.sleep(5)
 
 if __name__ == "__main__":
-    main()
+    # adb_check()
+    # today = datetime.date.today()
+    # # 计算前一天日期
+    # yesterday = today - datetime.timedelta(days=1)
+    # yesterday_str = yesterday.strftime("%Y/%m/%d")
+    # print("前一天日期：", yesterday_str)
+    # main(yesterday_str)
+    output = subprocess.check_output("adb shell wm size", shell=True).decode()
+    # 输出类似 "Physical size: 1280x720"
+    size_str = output.strip().split(":")[-1].strip()
+    screen_height, screen_width = map(int, size_str.split("x"))
+    print(screen_width, screen_height)
+    scroll_one_item(screen_width,screen_height)
+    # 检测adb是否连接到模拟器
     # adb_screencap()

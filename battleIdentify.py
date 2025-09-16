@@ -9,6 +9,7 @@ from pathlib import Path
 import easyocr
 import torch
 import yaml
+import os
 import threading
 from concurrent.futures import ThreadPoolExecutor , as_completed # 导入线程池模块
 
@@ -30,6 +31,7 @@ def print_progress_bar(str, completed, total, bar_length=50):
 if __name__ == "__main__":
     with open("config.yaml") as f:
         config = yaml.safe_load(f)
+
 
 
 
